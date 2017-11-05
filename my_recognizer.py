@@ -27,43 +27,33 @@ def recognize(models: dict, test_set: SinglesData):
     lowest_score = -1000000
 
     # iterate over all test words
-    for word_idx, word in enumerate(test_set.wordlist):
+    for word_idx, _ in enumerate(test_set.wordlist):
         word_X, word_length = test_set.get_item_Xlengths(word_idx)
+        current_probs = {}
 
-        # check whether the word is in models dictionary
-        if word in models:
-            model = models[word]
+        # go through the models, select a word, which model gives a best score
+        # and store this word as a guess
+        best_guess_score = -1000000
+        guess = ""
+        for train_word, model in models.items():
             try:
                 # get the score
-                score = model.score(word_X, word_length)
-                probabilities.append({word: score})
+                train_word_score = model.score(word_X, word_length)
+
+                # add score to probabilities dictionary
+                current_probs[train_word] = train_word_score
+
+                # change best guess if appropriate
+                if best_guess_score < train_word_score:
+                    best_guess_score = train_word_score
+                    guess = train_word
             except:
-                # print("failure on {} by model score".format(word))
-                probabilities.append({word: lowest_score})
-        else:
-            # print("failure: for word {} no model exist".format(word))
-            probabilities.append({word: lowest_score})
+                # print("failure on train word {} by model score".format(train_word))
+                current_probs[train_word] = lowest_score
 
         # get the best guess
-        guess = __get_best_guess__(models, word_X, word_length)
         guesses.append(guess)
+        probabilities.append(current_probs)
 
         # print("word: {}, score: {}, guess: {}".format(word, score, guess))
-
     return (probabilities, guesses)
-
-def __get_best_guess__(models: dict, word_X: list, word_length: list):
-     # go through the words and select a model with the best score
-    best_guess_score = -1000000
-    guess = ""
-    for train_word, model in models.items():
-        try:
-            train_word_score = model.score(word_X, word_length)
-            if best_guess_score < train_word_score:
-                best_guess_score = train_word_score
-                guess = train_word
-        except:
-            # print("failure on train word {} by model score".format(train_word))
-            pass
-
-    return guess

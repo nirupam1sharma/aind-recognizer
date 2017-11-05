@@ -37,7 +37,7 @@ class ModelSelector(object):
         # warnings.filterwarnings("ignore", category=RuntimeWarning)
         try:
             hmm_model = GaussianHMM(n_components=num_states, covariance_type="diag", n_iter=1000,
-                                    random_state=self.random_state, 
+                                    random_state=self.random_state,
                                     verbose=False).fit(self.X, self.lengths)
             if self.verbose:
                 print("model created for {} with {} states".format(self.this_word, num_states))
@@ -111,6 +111,7 @@ class SelectorBIC(ModelSelector):
                     BIC_score = -2 * logL + num_params * log_num_data_points
 
                     # update a best model if we achieve a best BIC score
+                    # smaller BIC score is better
                     if best_BIC_score > BIC_score:
                         best_BIC_score = BIC_score
                         bestModel = model
@@ -173,6 +174,7 @@ class SelectorDIC(ModelSelector):
                     DIC_score = logL - sum_logL/(word_count - 1) if word_count > 1 else logL
 
                     # update a best model if we achieve a best DIC score
+                    # bigger DIC score is better
                     if best_DIC_score < DIC_score:
                         best_DIC_score = DIC_score
                         bestModel = model
@@ -195,6 +197,7 @@ class SelectorCV(ModelSelector):
     def __model__(self, n_components, X_train, lengths_train):
         '''
         Trains a gaussian HMM with specified parameters
+
         :param n_components: number of components (states) in the model
         :param X_train: train set of X as used in hmmlearn
         :param lengths_train: train set of lengths as used in hmmlearn
@@ -252,14 +255,14 @@ class SelectorCV(ModelSelector):
             # if we have less than 3 sequences for a word, we cannot do k-folding
             if seq_len < no_of_splits:
                 for idx in range(seq_len):
-                    # create the model on the train set
+                    # create the model on "train" set
                     X_train, lengths_train = combine_sequences([idx], self.sequences)
                     model = self.__model__(n_components, X_train, lengths_train)
 
                      # check model for validity
                     if model is not None:
                         try:
-                            # calculate the model score on the test set
+                            # calculate the model score on the "test" set
                             idx_test = (idx + 1) % seq_len
                             X_test, lengths_test = combine_sequences([idx_test], self.sequences)
                             avg_logL += model.score(X_test, lengths_test)
@@ -296,6 +299,7 @@ class SelectorCV(ModelSelector):
                 avg_logL /= model_count
 
                 # update a best model if we achieve a best score
+                # bigger average score is better
                 if bestLogL < avg_logL:
                     bestLogL = avg_logL
                     bestModel = self.__model__(n_components, self.X, self.lengths)
