@@ -80,7 +80,7 @@ class SelectorBIC(ModelSelector):
         :param n_features: number of features
         :return: calculated number of free parameters of the HMM
         '''
-        return (n_components ** 2) + (2 * n_components * n_features)
+        return (n_components ** 2) + (2 * n_components * n_features) - 1
 
     def select(self):
         """ select the best model for self.this_word based on
@@ -90,9 +90,9 @@ class SelectorBIC(ModelSelector):
         """
         warnings.filterwarnings("ignore", category=DeprecationWarning)
 
-        best_BIC_score = 1000000
+        best_BIC_score = float("inf")
         bestModel = None
-        num_data_points = len(self.X)
+        num_data_points, num_features = self.X.shape
         log_num_data_points = np.log(num_data_points)
 
         # try different number of components
@@ -107,7 +107,7 @@ class SelectorBIC(ModelSelector):
                     logL = model.score(self.X, self.lengths)
 
                     # calculate BIC
-                    num_params = self.__calculate_num_params__(n_components, model.n_features)
+                    num_params = self.__calculate_num_params__(n_components, num_features)
                     BIC_score = -2 * logL + num_params * log_num_data_points
 
                     # update a best model if we achieve a best BIC score
@@ -143,7 +143,7 @@ class SelectorDIC(ModelSelector):
         """
         warnings.filterwarnings("ignore", category=DeprecationWarning)
 
-        best_DIC_score = -1000000
+        best_DIC_score = float("-inf")
         bestModel = None
 
         # try different number of components
@@ -241,7 +241,7 @@ class SelectorCV(ModelSelector):
         no_of_splits = 3
 
         # initialize variables
-        bestLogL = -1000000
+        bestLogL = float("-inf")
         bestModel = None
 
         # try different number of components
